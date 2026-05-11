@@ -1,27 +1,40 @@
+import { useEffect, useState } from 'react';
 import './App.css';
 
 function App() {
+
+  const [green, setGreen] = useState([])
+  const [yellow, setYellow] = useState([])
+  const [black, setBlack] = useState([])
+
+  const prev = black.length
+
+  useEffect(() => {
+  
+  }, [])
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src="Octocat.png" className="App-logo" alt="logo" />
-        <p>
-          GitHub Codespaces <span className="heart">♥️</span> React
-        </p>
-        <p className="small">
-          Edit <code>src/App.jsx</code> and save to reload.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </p>
-      </header>
+      <input name="green" type="text" id="green" onChange={(e) => {setGreen(e.target.value)}} />
+      <input name="yellow" type="text" id="yellow" onChange={(e) => {
+        setYellow([...yellow, e.target.value])
+      }} />
+      <input name="discard" type="text" id='discard' onChange={(e) => {
+        let current = e.target.value.length
+        console.log(current + " " + prev)
+        if(current < prev) {
+          let new_discard = black.slice(0, black.length - 1) 
+          setBlack(new_discard)
+        } else 
+          setBlack([...black, e.target.value.at(-1)])
+      }} />
+      {black.map((e, id) => {
+        return (
+          <div key={id}>
+            <p>{e}</p>
+          </div>
+        )
+      })}
     </div>
   );
 }
