@@ -27,7 +27,7 @@ const Pagination = ({
         .map((number) => (
           <p
             key={number}
-            className={"number"}
+            className={number === page ? "number active" : "number"}
             onClick={(e) => paginate(number, e)}
           >
             {number}
