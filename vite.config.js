@@ -8,4 +8,5 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
   },
+  base: '/wordle_helper.github.io/',
 })
