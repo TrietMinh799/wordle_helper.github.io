@@ -18,26 +18,38 @@ const Pagination = ({
   return (
     <div className="pagination">
       {page > 1 && (
-        <p id="arrow" onClick={(e) => paginate(page - 1, e)}>
+        <button
+          type="button"
+          className="arrow"
+          aria-label="Previous page"
+          onClick={(e) => paginate(page - 1, e)}
+        >
           &laquo;
-        </p>
+        </button>
       )}
       {pageNumbers
         .slice(page - 1, page + limitPagesPagination)
         .map((number) => (
-          <p
+          <button
             key={number}
+            type="button"
             className={number === page ? "number active" : "number"}
+            aria-current={number === page ? "page" : undefined}
             onClick={(e) => paginate(number, e)}
           >
             {number}
-          </p>
+          </button>
         ))}
 
       {page < Math.ceil(wordLength / postPerPage) && (
-        <p className="arrow" onClick={(e) => paginate(page + 1, e)}>
+        <button
+          type="button"
+          className="arrow"
+          aria-label="Next page"
+          onClick={(e) => paginate(page + 1, e)}
+        >
           &raquo;
-        </p>
+        </button>
       )}
     </div>
   );
