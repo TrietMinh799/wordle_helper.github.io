@@ -4,148 +4,176 @@ import Pagination from "./components/Pagination";
 import Word from "./components/Word";
 
 const boxIndex = [0, 1, 2, 3, 4];
+const emptyBoxes = ["", "", "", "", ""];
 
 function App() {
-  const [green, setGreen] = useState(["", "", "", "", ""]);
-  const [yellow, setYellow] = useState(["", "", "", "", ""]);
+  const [green, setGreen] = useState(emptyBoxes);
+  const [yellow, setYellow] = useState(emptyBoxes);
   const [black, setBlack] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [allWords, setAllWords] = useState([]);
   const [wordList, setWordList] = useState([]);
-  const inputRef = useRef([]);
 
-  const prev = black.length;
-  const curr = [...green];
+  const greenInputRef = useRef([]);
+  const yellowInputRef = useRef([]);
+
   const postPerPage = 10;
 
   const preprocess = async () => {
     const cachedList = localStorage.getItem("wordleList");
     if (cachedList) {
-      setWordList(JSON.parse(cachedList));
+      const parsedList = JSON.parse(cachedList);
+      setAllWords(parsedList);
       return;
     }
+
     fetch("https://raw.githubusercontent.com/tabatkins/wordle-list/main/words")
       .then((res) => res.text())
       .then((data) => {
-        setWordList(data.split("\n"));
-      })
-      .then(() => {
-        localStorage.setItem("wordleList", JSON.stringify(wordList));
+        const parsedList = data.split("\n");
+        setAllWords(parsedList);
+        localStorage.setItem("wordleList", JSON.stringify(parsedList));
       });
   };
 
-  const handleKeyNext = (e, index) => {
-    if (e.value && index < 4) {
-      inputRef.current[index + 1].focus();
-    }
-  };
-
-  const handleKeyDown = (e, index) => {
-    if (e.key === "Backspace" && !green[index] && index > 0) {
-      inputRef.current[index - 1].focus();
-    }
-  };
-
-  const handlePaste = (e) => {
-    const data = e.clipboardData.getData("text").split("");
-    if (data.length === 5) {
-      setGreen(data);
-      inputRef.current[4].focus();
-    }
-  };
-
-  const handleGreen = (index, value) => {
-    let new_word = curr;
-    new_word[index] = value.value;
-    setGreen(new_word);
-    handleKeyNext(value, index);
-
-    let new_wordlist = JSON.parse(localStorage.getItem("wordleList"));
-    if (value.value === "") {
-      console.log(curr);
-      for (let i = 0; i < 5; i++) {
-        if (curr[i] !== "") {
-          new_wordlist = new_wordlist.filter((word) => {
-            return word[i] === curr[i];
-          });
-        }
-      }
-      setWordList(new_wordlist);
-    } else {
-      new_wordlist = wordList.filter((word) => {
-        return word[index] === value.value;
+  const filterWords = (words, greenLetters, yellowLetters, blackLetters) => {
+    return words.filter((word) => {
+      const matchesGreen = greenLetters.every((letter, index) => {
+        return letter === "" || word[index] === letter;
       });
-      setWordList(new_wordlist);
-    }
-  };
 
-  const handleYellow = (index, value) => {
-    let new_wordlist = JSON.parse(localStorage.getItem("wordleList"));
-    new_wordlist = new_wordlist.filter((word) => {
-      return word.includes(value.value) && word[index] !== value.value;
+      const matchesYellow = yellowLetters.every((letter, index) => {
+        return (
+          letter === "" || (word.includes(letter) && word[index] !== letter)
+        );
+      });
+
+      const matchesBlack = blackLetters.every((letter) => {
+        return !word.includes(letter);
+      });
+
+      return matchesGreen && matchesYellow && matchesBlack;
     });
-    setWordList(new_wordlist);
   };
 
-  const handleBlack = (e) => {
-    let current = e.target.value.length;
-    if (current < prev) {
-      let new_discard = black.slice(0, black.length - 1);
-      setBlack(new_discard);
-      setWordList(JSON.parse(localStorage.getItem("wordleList")));
-    } else {
-      setBlack([...black, e.target.value.at(-1)]);
+  const updateBoxLetters = ({ index, rawValue, letters, setLetters, refs }) => {
+    const nextValue = rawValue.slice(-1).toLowerCase();
+    const nextLetters = [...letters];
+    nextLetters[index] = nextValue;
+    setLetters(nextLetters);
 
-      let new_wordlist = wordList.filter((word) => {
-        return !word.includes(e.target.value.at(-1));
-      });
-      setWordList(new_wordlist);
+    if (nextValue !== "" && index < boxIndex.length - 1) {
+      refs.current[index + 1]?.focus();
     }
+  };
+
+  const handleBoxKeyDown = (event, index, letters, refs) => {
+    if (event.key === "Backspace" && !letters[index] && index > 0) {
+      refs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (event) => {
+    const data = event.clipboardData
+      .getData("text")
+      .slice(0, boxIndex.length)
+      .toLowerCase()
+      .split("");
+
+    if (data.length === boxIndex.length) {
+      setGreen(data);
+      greenInputRef.current[boxIndex.length - 1]?.focus();
+    }
+  };
+
+  const handleGreenChange = (index, value) => {
+    updateBoxLetters({
+      index,
+      rawValue: value,
+      letters: green,
+      setLetters: setGreen,
+      refs: greenInputRef,
+    });
+  };
+
+  const handleYellowChange = (index, value) => {
+    updateBoxLetters({
+      index,
+      rawValue: value,
+      letters: yellow,
+      setLetters: setYellow,
+      refs: yellowInputRef,
+    });
+  };
+
+  const handleBlack = (event) => {
+    const letters = event.target.value.toLowerCase().split("");
+    setBlack(letters);
   };
 
   useEffect(() => {
     preprocess();
   }, []);
 
+  useEffect(() => {
+    if (allWords.length === 0) {
+      return;
+    }
+
+    setWordList(filterWords(allWords, green, yellow, black));
+    setCurrentPage(1);
+  }, [allWords, green, yellow, black]);
+
   return (
     <div className="App">
       <div className="guessing">
         <div className="correct-container">
           <p className="header">Correct characters: </p>
-          {boxIndex.map((index) => (
-            <input
-              key={index}
-              className="correct"
-              name={`green${index + 1}`}
-              type="text"
-              id={`green${index + 1}`}
-              maxLength={1}
-              ref={(el) => (inputRef.current[index] = el)}
-              onChange={(e) => {
-                handleGreen(index, e.target);
-              }}
-              onKeyDown={(e) => {
-                handleKeyDown(e, index);
-              }}
-              onPaste={handlePaste}
-            />
-          ))}
+          <div className="input-row">
+            {boxIndex.map((index) => (
+              <input
+                key={index}
+                className="correct"
+                name={`green${index + 1}`}
+                type="text"
+                id={`green${index + 1}`}
+                maxLength={1}
+                value={green[index]}
+                ref={(el) => (greenInputRef.current[index] = el)}
+                onChange={(e) => {
+                  handleGreenChange(index, e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  handleBoxKeyDown(e, index, green, greenInputRef);
+                }}
+                onPaste={handlePaste}
+              />
+            ))}
+          </div>
         </div>
         <div className="wrong-container">
           <p className="header">Wrong position (but right characters)</p>
-          {boxIndex.map((index) => (
-            <input
-              key={index}
-              className="correct wrong"
-              name={`yellow${index + 1}`}
-              type="text"
-              id={`yellow${index + 1}`}
-              maxLength={1}
-              onChange={(e) => {
-                handleYellow(index, e.target);
-              }}
-            />
-          ))}
+          <div className="input-row">
+            {boxIndex.map((index) => (
+              <input
+                key={index}
+                className="correct wrong"
+                name={`yellow${index + 1}`}
+                type="text"
+                style={{ color: "white" }}
+                id={`yellow${index + 1}`}
+                maxLength={1}
+                value={yellow[index]}
+                ref={(el) => (yellowInputRef.current[index] = el)}
+                onChange={(e) => {
+                  handleYellowChange(index, e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  handleBoxKeyDown(e, index, yellow, yellowInputRef);
+                }}
+              />
+            ))}
+          </div>
         </div>
         <div className="discard-container">
           <p>Discard characters</p>
@@ -153,9 +181,8 @@ function App() {
             name="discard"
             type="text"
             id="discard"
-            onChange={(e) => {
-              handleBlack(e);
-            }}
+            value={black.join("")}
+            onChange={handleBlack}
           />
         </div>
       </div>
