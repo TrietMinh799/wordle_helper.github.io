@@ -21,7 +21,7 @@ function App() {
 
   const preprocess = async () => {
     const cachedList = localStorage.getItem("wordleList");
-    if (cachedList) {
+    if (cachedList || cachedList.length > 0) {
       const parsedList = JSON.parse(cachedList);
       setAllWords(parsedList);
       return;
