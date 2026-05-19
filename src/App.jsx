@@ -71,6 +71,8 @@ function App() {
     if (event.key === "Backspace" && !letters[index] && index > 0) {
       refs.current[index - 1]?.focus();
     }
+    if (event.key === "") {
+    }
   };
 
   const handlePaste = (event) => {
@@ -185,6 +187,13 @@ function App() {
             onChange={handleBlack}
           />
         </div>
+        <a
+          href="https://www.nytimes.com/games/wordle"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Play Wordle
+        </a>
       </div>
       <div className="word-list">
         <p className="header">Possible words: </p>
