@@ -129,7 +129,6 @@ function App() {
   return (
     <div className="App">
       <div className="guessing">
-        <h1>Wordle Helper</h1>
         <div className="correct-container">
           <p className="header">Correct characters: </p>
           <div className="input-row">
